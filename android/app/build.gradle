@@ -1,0 +1,62 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Número de versión: GitHub Actions lo pone solo en cada compilación.
+def ciRun = (System.getenv('GITHUB_RUN_NUMBER') ?: '0') as int
+// Firma: GitHub Actions toma la llave de los "secretos" del repositorio.
+def ksFile = System.getenv('KEYSTORE_FILE')
+
+android {
+    namespace 'com.zonajaguar.marcador'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.zonajaguar.marcador'
+        minSdk 24
+        targetSdk 35
+        versionCode 100 + ciRun
+        versionName "1.${ciRun}"
+    }
+
+    // La app usa la misma página que la versión web: carpeta docs/ del repositorio.
+    sourceSets {
+        main {
+            assets.srcDirs = ['../../docs']
+        }
+    }
+
+    signingConfigs {
+        release {
+            if (ksFile) {
+                storeFile file(ksFile)
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (ksFile) signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = variant.buildType.name == 'release' ? 'Zona Jaguar.apk' : 'Zona Jaguar (prueba).apk'
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.13.1'
+    implementation 'androidx.webkit:webkit:1.12.1'
+}
